@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Incident Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* GLOBAL FONT SETTING */
+        body { 
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Form Inputs */
+        .input-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+        .input-field {
+            background-color: #334155;
+            border: 1px solid #475569;
+            color: white;
+            font-size: 0.9rem;
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            width: 100%;
+            transition: all 0.2s;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .section-title {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 0.02em;
+        }
+        
+        /* Tab Button Styles */
+        .tab-btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            background-color: #2563eb; /* Blue 600 */
+            color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .tab-btn.inactive {
+            color: #94a3b8; /* Slate 400 */
+        }
+        .tab-btn.inactive:hover {
+            color: white;
+            background-color: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 h-screen flex flex-col overflow-hidden text-slate-200">
+
+    <!-- Top Navbar -->
+    <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex justify-between items-center shadow-md z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-10 h-10 flex items-center justify-center rounded-lg shadow-lg shadow-blue-500/20">
+                <i class="fas fa-tower-broadcast text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-tight leading-tight">Major Incident</h1>
+                <p class="text-xs text-slate-400 font-medium">Command Center Generator</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <!-- View Tabs -->
+            <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+                <button onclick="switchTab('live')" id="tab-live" class="tab-btn active">
+                    <i class="fas fa-pen-nib"></i> Edit Draft
+                </button>
+                <button onclick="switchTab('sample')" id="tab-sample" class="tab-btn inactive">
+                    <i class="fas fa-eye"></i> View Sample
+                </button>
+            </div>
+
+            <!-- Copy Button -->
+            <button onclick="copyToClipboard()" class="group bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all transform hover:scale-105 flex items-center gap-2 border border-emerald-500">
+                <i class="far fa-copy group-hover:animate-pulse"></i> <span>Copy to Clipboard</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 flex-col lg:flex-row overflow-hidden">
+        
+        <!-- LEFT PANEL: Configuration (Hidden when viewing sample) -->
+        <div id="config-panel" class="w-full lg:w-1/2 bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800 overflow-y-auto p-6 z-10 transition-all duration-300">
+            
+            <!-- Status Selector -->
+            <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700 shadow-inner">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Incident Status</label>
+                <select id="statusSelector" class="w-full text-sm font-bold rounded-lg p-3 outline-none cursor-pointer border-l-4 transition-all" onchange="handleStatusChange()">
+                    <option value="red">🔴 Investigation Phase</option>
+                    <option value="orange">🟠 Restoration Phase</option>
+                    <option value="green">🟢 Resolution Phase</option>
+                </select>
+            </div>
+
+            <!-- CORE DETAILS -->
+            <div class="section-title"><i class="fas fa-fingerprint text-blue-400"></i> Core Information</div>
+            
+            <div class="space-y-4">
+                <div class="input-group">
+                    <label>ServiceNow Reference</label>
+                    <input type="text" id="incRef" class="input-field font-mono tracking-wide" placeholder="e.g. INC1234567" oninput="updatePreview()">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="input-group">
+                        <label>Priority</label>
+                        <select id="priority" class="input-field" onchange="updatePreview()">
+                            <option value="">-- Select --</option>
+                            <option>P1 Major</option>
+                            <option>P2 Major</option>
+                            <option>P2 Non-Major</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Incident Stage</label>
+                        <select id="incStage" class="input-field" onchange="updatePreview()">
+                             <option value="">-- Select --</option>
+                            <option>Engagement</option>
+                            <option>Assessment</option>
+                            <option>Declaration</option>
+                            <option>Stand-Up</option>
+                            <option>Fact Finding</option>
+                            <option>Alternatives</option>
+                            <option>Agree on a Plan</option>
+                            <option>ECAB</option>
+                            <option>Execute Plan</option>
+                            <option>Confirm Repair</option>
+                            <option>Confirm Restoration</option>
+                            <option>Debrief</option>
+                            <option>Resolved (PIR)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Short Description</label>
+                    <input type="text" id="shortDesc" class="input-field" placeholder="Brief description of the issue" oninput="updatePreview()">
+                </div>
+
+                <div class="input-group">
+                    <label>Business Impact (Executive Summary)</label>
+                    <textarea id="bizImpact" rows="3" class="input-field resize-none" placeholder="Describe impact to users/business..." oninput="updatePreview()"></textarea>
+                </div>
+
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="input-group">
+                        <label>Technology area affected</label>
+                         <input type="text" id="techArea" class="input-field" placeholder="e.g. Network / Database" oninput="updatePreview()">
+                    </div>
+                    <div class="input-group">
+                        <label>Wipro Scope</label>
+                        <select id="wiproScope" class="input-field" onchange="updatePreview()">
+                            <option value="">-- Select --</option>
+                            <option>Yes</option>
+                            <option>No</option>
+                            <option>Undetermined</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="input-group">
+                    <label>Impacted Location</label>
+                    <input type="text" id="impactedLoc" class="input-field" placeholder="e.g. All Stores" oninput="updatePreview()">
+                </div>
+            </div>
+
+            <!-- TIMELINE -->
+            <div class="section-title"><i class="fas fa-clock text-blue-400"></i> Timeline (AEDT)</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="input-group">
+                     <label>INC Opened time</label>
+                     <input type="text" id="startTime" class="input-field text-xs" placeholder="DD-MMM HH:MM" oninput="updatePreview()">
+                </div>
+                 <div class="input-group">
+                     <label>MI Declared time</label>
+                     <input type="text" id="miTime" class="input-field text-xs" placeholder="DD-MMM HH:MM" oninput="updatePreview()">
+                </div>
+                 <div class="input-group">
+                     <label>Resolved/ Restored time</label>
+                     <input type="text" id="restoreTime" class="input-field text-xs" placeholder="DD-MMM HH:MM" oninput="updatePreview()">
+                </div>
+            </div>
+
+            <!-- TECHNICAL -->
+             <div class="section-title"><i class="fas fa-code-branch text-blue-400"></i> Technical Analysis</div>
+             <div class="space-y-4">
+                <div class="input-group">
+                    <label>Infra Actions</label>
+                    <textarea id="findings" rows="6" class="input-field resize-none" placeholder="List technical findings and actions taken..." oninput="updatePreview()"></textarea>
+                </div>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="input-group">
+                        <label>Related Change</label>
+                         <input type="text" id="chgRef" class="input-field" placeholder="CHGXXXXX" oninput="updatePreview()">
+                    </div>
+                    <div class="input-group">
+                        <label>Vendor Ticket</label>
+                         <input type="text" id="vendorTkt" class="input-field" placeholder="VND-XXXXX" oninput="updatePreview()">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="input-group">
+                        <label>Repeated Incident?</label>
+                        <select id="repeatInc" class="input-field" onchange="updatePreview()">
+                            <option value="">--</option>
+                            <option>No</option>
+                            <option>Yes</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Known Issue</label>
+                         <input type="text" id="riskRef" class="input-field" placeholder="Risk ID / No" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+
+             <!-- COORDINATION -->
+            <div class="section-title"><i class="fas fa-network-wired text-blue-400"></i> Coordination</div>
+            <div class="space-y-3">
+                 <div class="input-group">
+                     <label>Runsheet link</label>
+                     <input type="text" id="runSheet" class="input-field text-blue-300" placeholder="http://..." oninput="updatePreview()">
+                 </div>
+                 
+                 <!-- BRIDGE LOGIC -->
+                 <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                    <div class="input-group mb-2">
+                        <label>Is Bridge Going On?</label>
+                        <select id="bridgeStatus" class="input-field" onchange="handleBridgeStatus()">
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="bridgeLinkContainer">
+                        <input type="text" id="bridge" class="input-field text-blue-300" placeholder="Bridge Link URL" oninput="updatePreview()">
+                    </div>
+                 </div>
+
+                 <div class="input-group">
+                     <label>Chat link</label>
+                     <input type="text" id="chat" class="input-field text-blue-300" placeholder="http://..." oninput="updatePreview()">
+                 </div>
+
+                 <div class="input-group">
+                    <label>Participants</label>
+                    <textarea id="participants" rows="3" class="input-field resize-y" placeholder="List active participants..." oninput="updatePreview()"></textarea>
+                 </div>
+            </div>
+
+            <!-- MANAGEMENT -->
+             <div class="section-title"><i class="fas fa-user-shield text-blue-400"></i> Management</div>
+             <div class="space-y-3 pb-8">
+                <div class="input-group">
+                     <label>Next Update</label>
+                     <input type="text" id="nextUpdate" class="input-field" placeholder="HH:MM AEDT" oninput="updatePreview()">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     <div class="input-group">
+                         <label>Wipro Incident Manager</label>
+                         <input type="text" id="wiproIM" class="input-field" placeholder="Name" oninput="updatePreview()">
+                    </div>
+                     <div class="input-group">
+                         <label>Wipro Operations Manager</label>
+                         <input type="text" id="wiproOM" class="input-field" placeholder="Name" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+             <div class="w-[100%] rounded-md">
+                <button id="sendEmailBtn" class="text-white px-2 py-2 text-center w-[100%] rounded-md bg-blue-500">Trigger Email</button>
+             </div>
+        </div>
+
+        <!-- RIGHT PANEL: PREVIEW AREA (50% Width on Desktop) -->
+        <div id="preview-panel" class="w-full lg:w-1/2 flex flex-col bg-slate-950 relative border-t lg:border-t-0 lg:border-l border-slate-800 transition-all duration-300 ease-in-out">
+            
+            <!-- PREVIEW CONTAINER -->
+            <div class="flex-1 p-4 lg:p-10 overflow-auto flex justify-center items-start relative">
+                <!-- Background Grid Pattern -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#475569 1px, transparent 1px); background-size: 20px 20px;"></div>
+                
+                <!-- Centered Preview Container -->
+                <div id="email-preview-container" class="shadow-2xl transition-all duration-300 z-10 scale-[0.85] origin-top sm:scale-100"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-32 transition-transform duration-300 flex items-center gap-4 font-semibold z-50 border border-blue-400 opacity-0 pointer-events-none">
+        <div class="bg-white text-blue-600 rounded-full p-1"><i class="fas fa-check text-xs"></i></div>
+        <div>
+            <p class="text-sm font-bold" id="toast-title">Copied to Clipboard!</p>
+            <p class="text-xs text-blue-100 font-normal" id="toast-msg">Paste (Ctrl+V) into your email.</p>
+        </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
